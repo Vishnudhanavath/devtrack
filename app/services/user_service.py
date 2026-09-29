@@ -41,3 +41,55 @@ def get_user_by_id(user_id: int):
             return user
 
     return None
+
+
+# ----------alembic: ------------------
+
+# We'll use Alembic for database schema changes.
+
+# That gives us version-controlled database changes.
+
+
+
+
+# -------------- sqlalchemy: -----------------
+#it help pythong application to communicate with the database
+    #  sqlalchemy has: 
+        # |Engine
+        # Session
+        # Model
+        # ORM
+        # Query
+        # Transaction
+        # Connection Pool
+
+# 1. engine:
+        #  think it as  python application and database connectivity setup.
+            # FastAPI application
+            #         │
+            #         ▼
+            #     SQLAlchemy
+            #         │
+            #         Engine
+            #         │
+            #         ▼
+            #     PostgreSQL
+
+
+
+            # SQLAlchemy
+            #     ↓
+            # Python database toolkit / ORM
+
+            # psycopg
+            #     ↓
+            # PostgreSQL driver
+
+            # Alembic
+            #     ↓
+            # Database migrations
+
+
+# SQLAlchemy = higher-level database toolkit
+
+# psycopg = PostgreSQL communication driver
