@@ -1,46 +1,40 @@
+# from app.schemas.user import UserCreate
+
+from app.models.user import User
+from app.repositories.user_repository import UserRepository
+from app.schemas.user import UserCreate
+
+from app.models.user import User
+from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserCreate
 
 
-users = [{
-        "id": 1,
-        "name": "Vishnu",
-        "email": "vishnu@example.com"
-    },
-    {
-        "id": 2,
-        "name": "Rahul",
-        "email": "rahul@example.com"
-    }]
+class UserService:
+
+    def __init__(self, repository: UserRepository):
+        self.repository = repository
+
+    def create_user(self, user_data: UserCreate) -> User:
+        existing_user = self.repository.get_by_email(user_data.email)
+
+        if existing_user:
+            raise ValueError("Email already exists")
+
+        user = User(
+            name=user_data.name,
+            email=user_data.email
+        )
+
+        return self.repository.create(user) 
+        
+
+    def get_users(self) -> list[User]:
+        return self.repository.get_all()
+
+    def get_user_by_id(self, user_id: int) -> User | None:
+        return self.repository.get_by_id(user_id)
 
 
-next_user_id = len(users)+1
-
-
-def create_user(user: UserCreate):
-    global next_user_id
-
-    new_user = {
-        "id": next_user_id,
-        "name": user.name,
-        "email": user.email
-    }
-
-    users.append(new_user)
-    next_user_id += 1
-
-    return new_user
-
-
-def get_users():
-    return users
-
-
-def get_user_by_id(user_id: int):
-    for user in users:
-        if user["id"] == user_id:
-            return user
-
-    return None
 
 
 # ----------alembic: ------------------
