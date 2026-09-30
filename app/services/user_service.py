@@ -1,12 +1,6 @@
-# from app.schemas.user import UserCreate
-
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.schemas.user import UserCreate
-
-from app.models.user import User
-from app.repositories.user_repository import UserRepository
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserPatch, UserUpdate
 
 
 class UserService:
@@ -25,14 +19,89 @@ class UserService:
             email=user_data.email
         )
 
-        return self.repository.create(user) 
-        
+        return self.repository.create(user)
 
-    def get_users(self) -> list[User]:
-        return self.repository.get_all()
+    def get_users(              
+    self,
+    page: int = 1,
+    page_size: int = 20,
+    name: str | None = None,
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
+                  
+    ) -> tuple[list[User], int]:
+        return self.repository.get_all(
+            page=page,
+            page_size=page_size,
+            name=name,
+            sort_by=sort_by,
+            sort_order=sort_order,
+        )
 
     def get_user_by_id(self, user_id: int) -> User | None:
         return self.repository.get_by_id(user_id)
+
+    def update_user(
+        self,
+        user_id: int,
+        user_data: UserUpdate
+    ) -> User | None:
+
+        user = self.repository.get_by_id(user_id)
+
+        if user is None:
+            return None
+
+        existing_user = self.repository.get_by_email(
+            user_data.email
+        )
+
+        if existing_user and existing_user.id != user_id:
+            raise ValueError("Email already exists")
+
+        user.name = user_data.name
+        user.email = user_data.email
+
+        return self.repository.update(user)
+
+    def patch_user(
+        self,
+        user_id: int,
+        user_data: UserPatch
+    ) -> User | None:
+
+        user = self.repository.get_by_id(user_id)
+
+        if user is None:
+            return None
+
+        if user_data.email is not None:
+            existing_user = self.repository.get_by_email(
+                user_data.email
+            )
+
+            if existing_user and existing_user.id != user_id:
+                raise ValueError("Email already exists")
+
+        if user_data.name is not None:
+            user.name = user_data.name
+
+        if user_data.email is not None:
+            user.email = user_data.email
+
+        return self.repository.update(user)
+
+    def delete_user(self, user_id: int) -> bool:
+        user = self.repository.get_by_id(user_id)
+
+        if user is None:
+            return False
+
+        self.repository.delete(user)
+
+        return True
+
+
 
 
 
@@ -87,3 +156,12 @@ class UserService:
 # SQLAlchemy = higher-level database toolkit
 
 # psycopg = PostgreSQL communication driver
+
+
+
+
+
+
+
+
+
