@@ -13,6 +13,9 @@ from app.schemas.user import (
 from app.services.user_service import UserService
 from app.dependencies.user import get_user_service
 
+from app.dependencies.auth import get_current_user
+from app.models.user import User
+
 router = APIRouter(
     prefix="/users",
     tags=["Users"]
@@ -109,12 +112,13 @@ def get_users(
 # get user by id 
 @router.get(
     "/{user_id}",
-    response_model=UserResponse
+    response_model=UserResponse,
 )
 def get_user(
     user_id: int,
     # db: Session = Depends(get_db)
     service: UserService = Depends(get_user_service),
+    current_user: User = Depends(get_current_user),
 ):
     # repository = UserRepository(db)
     # service = UserService(repository)

@@ -1,6 +1,7 @@
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserCreate, UserPatch, UserUpdate
+from app.core.security import hash_password
 
 
 class UserService:
@@ -13,12 +14,14 @@ class UserService:
 
         if existing_user:
             raise ValueError("Email already exists")
+        
+        hashed_password = hash_password(user_data.password)
 
         user = User(
             name=user_data.name,
-            email=user_data.email
+            email=user_data.email,
+            password_hash = hashed_password
         )
-
         return self.repository.create(user)
 
     def get_users(              
