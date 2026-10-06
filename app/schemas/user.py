@@ -24,7 +24,7 @@ class UserPatch(BaseModel):
 
 
 class UserResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True) # return's as the object 
     id:int 
     name:str 
     email: str 

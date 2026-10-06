@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status,Query
 from sqlalchemy.orm import Session
+from app.models.enums import UserRole
 
 from app.db.database import get_db
 from app.repositories.user_repository import UserRepository
@@ -15,6 +16,12 @@ from app.dependencies.user import get_user_service
 
 from app.dependencies.auth import get_current_user
 from app.models.user import User
+
+
+from app.dependencies.auth import require_role
+# app/api/v1/users.py
+
+
 
 router = APIRouter(
     prefix="/users",
@@ -80,6 +87,7 @@ def get_users(
     ),
     # db: Session = Depends(get_db),
     service: UserService = Depends(get_user_service),
+    current_user: User = Depends(get_current_user)
 ):
     # repository = UserRepository(db)
     # service = UserService(repository)
@@ -109,6 +117,19 @@ def get_users(
             detail=str(error),
         )
 
+@router.get(
+    "/admin-check",
+    tags=["Administration"],
+)
+def admin_check(
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+):
+    return {
+        "message": "Welcome, administrator!",
+        "user_id": current_user.id,
+        "role": current_user.role,
+    }
+
 # get user by id 
 @router.get(
     "/{user_id}",
@@ -122,6 +143,11 @@ def get_user(
 ):
     # repository = UserRepository(db)
     # service = UserService(repository)
+    if(user_id != current_user.id):
+        raise HTTPException(
+            status_code= status.HTTP_403_FORBIDDEN,
+            detail="You are not allowed to access this user",
+        )
 
     user = service.get_user_by_id(user_id)
 
@@ -215,6 +241,15 @@ def delete_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+
+
+
+
+
+
+
+
+
 
 
 
