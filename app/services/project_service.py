@@ -21,7 +21,7 @@ class ProjectService:
             owner_id = owner_id,
         )
 
-        return self.repository.create(project) 
+        return self.repository.create_with_owner(project) 
 
 
     def get_project(
@@ -32,7 +32,7 @@ class ProjectService:
         return self.repository.get_by_id(project_id) 
 
 
-    def get_my_project(
+    def get_my_projects(
             self,
             owner_id:int 
     ) -> list[Project]:
