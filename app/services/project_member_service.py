@@ -7,7 +7,13 @@ from app.repositories.project_repository import ProjectRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.project_member import ProjectMemberCreate
 
+from sqlalchemy.exc import IntegrityError 
 
+from app.core.exceptions.base import (
+    PermissionDeniedError,
+    ResourceConflictError,
+    ResourceNotFoundError,
+)
 
 class ProjectMemberService:
 
@@ -30,7 +36,7 @@ class ProjectMemberService:
         project = self.project_repository.get_by_id(project_id)
 
         if project is None:
-            raise LookupError("Project not found")
+            raise ResourceNotFoundError("Project not found")
 
         return project
 
@@ -42,7 +48,7 @@ class ProjectMemberService:
     ) -> None:
 
         if project.owner_id != current_user_id:
-            raise PermissionError(
+            raise PermissionDeniedError(
                 "Only the project owner can manage membership"
             )
 
@@ -63,7 +69,7 @@ class ProjectMemberService:
         user = self.user_repository.get_by_id(member_data.user_id)
 
         if user is None:
-            raise LookupError("User not found")
+            raise ResourceNotFoundError("User not found")
 
         existing = self.member_repository.get_membership(
             project_id,
@@ -71,7 +77,7 @@ class ProjectMemberService:
         )
 
         if existing is not None:
-            raise ValueError("User is already a project member")
+            raise ResourceConflictError("User is already a project member")
  
         membership = ProjectMember( # call the repository to add the member
             project_id=project_id,
@@ -79,7 +85,30 @@ class ProjectMemberService:
             role=ProjectRole(member_data.role),
         )
 
-        return self.member_repository.add(membership)
+        # return self.member_repository.add(membership) 
+        try:
+            return self.member_repository.add(membership)
+
+        except IntegrityError as exc:
+            original_error = exc.orig
+
+            sqlstate = getattr(original_error, "sqlstate", None)
+
+            constraint_name = getattr(
+                getattr(original_error, "diag", None),
+                "constraint_name",
+                None,
+            )
+
+            if (
+                sqlstate == "23505"
+                and constraint_name == "uq_project_members_project_user"
+            ):
+                raise ResourceConflictError(
+                    "User is already a member of this project"
+                ) from exc
+
+            raise
 
 
 
@@ -99,7 +128,7 @@ class ProjectMemberService:
         is_owner = project.owner_id == current_user_id
 
         if not is_owner and membership is None:
-            raise PermissionError(
+            raise PermissionDeniedError(
                 "You are not a member of this project"
             )
 
@@ -125,7 +154,7 @@ class ProjectMemberService:
         )
 
         if membership is None:
-            raise LookupError("Project membership not found")
+            raise ResourceNotFoundError("Project membership not found")
 
         membership.role = ProjectRole(new_role)
 
@@ -146,7 +175,7 @@ class ProjectMemberService:
         self._require_owner(project, current_user_id)
 
         if user_id == project.owner_id:
-            raise ValueError(
+            raise ResourceConflictError(
                 "The project owner cannot be removed as a member"
             )
 
@@ -156,7 +185,7 @@ class ProjectMemberService:
         )
 
         if membership is None:
-            raise LookupError("Project membership not found")
+            raise ResourceNotFoundError("Project membership not found")
 
         self.member_repository.delete(membership)
 

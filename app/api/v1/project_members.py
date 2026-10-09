@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies.auth import get_current_user
-from app.dependencies.project_member import get_project_member_service
+from app.dependencies.project_member import get_project_member_service 
 from app.models.user import User
 from app.schemas.project_member import (
     ProjectMemberCreate,
@@ -9,7 +9,12 @@ from app.schemas.project_member import (
     ProjectMemberUpdate,
 )
 from app.services.project_member_service import ProjectMemberService
-
+from app.models.project_member import ProjectMember, ProjectRole
+from app.models.enums import UserRole  
+from app.dependencies.project_access import (
+    get_project_member,
+    require_project_role,
+)
 
 router = APIRouter(
     prefix="/projects/{project_id}/members",
@@ -17,26 +22,26 @@ router = APIRouter(
 )
 
 
-def raise_service_error(error: Exception) -> None:
-    if isinstance(error, PermissionError):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(error),
-        )
+# def raise_service_error(error: Exception) -> None:
+#     if isinstance(error, PermissionError):
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail=str(error),
+#         )
 
-    if isinstance(error, LookupError):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        )
+#     if isinstance(error, LookupError):
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail=str(error),
+#         )
 
-    if isinstance(error, ValueError):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(error),
-        )
+#     if isinstance(error, ValueError):
+#         raise HTTPException(
+#             status_code=status.HTTP_409_CONFLICT,
+#             detail=str(error),
+#         )
 
-    raise error
+#     raise error
 
 
 @router.post(
@@ -47,19 +52,23 @@ def raise_service_error(error: Exception) -> None:
 def add_project_member(
     project_id: int,
     member_data: ProjectMemberCreate,
-    current_user: User = Depends(get_current_user),
+    membership: ProjectMember = Depends(
+        require_project_role(
+            ProjectRole.OWNER,
+            ProjectRole.MANAGER,
+        )
+    ),
     service: ProjectMemberService = Depends(
         get_project_member_service
     ),
 ):
-    try:
-        return service.add_member(
-            project_id=project_id,
-            member_data=member_data,
-            current_user_id=current_user.id,
-        )
-    except (PermissionError, LookupError, ValueError) as error:
-        raise_service_error(error)
+    
+    return service.add_member(
+        project_id=project_id,
+        member_data=member_data,
+        current_user_id=membership.user_id,
+    )
+  
 
 
 @router.get(
@@ -68,18 +77,18 @@ def add_project_member(
 )
 def get_project_members(
     project_id: int,
-    current_user: User = Depends(get_current_user),
+    member: ProjectMember = Depends(get_project_member),
     service: ProjectMemberService = Depends(
         get_project_member_service
     ),
 ):
-    try:
+    # try:
         return service.get_members(
             project_id=project_id,
-            current_user_id=current_user.id,
+            current_user_id=member.user_id,
         )
-    except (PermissionError, LookupError, ValueError) as error:
-        raise_service_error(error)
+    # except (PermissionError, LookupError, ValueError) as error:
+    #     raise_service_error(error)
 
 
 @router.patch(
@@ -90,20 +99,22 @@ def update_project_member(
     project_id: int,
     user_id: int,
     member_data: ProjectMemberUpdate,
-    current_user: User = Depends(get_current_user),
+    membership: ProjectMember = Depends(
+        require_project_role(ProjectRole.OWNER)
+    ),
     service: ProjectMemberService = Depends(
         get_project_member_service
     ),
 ):
-    try:
+    # try:
         return service.update_member_role(
             project_id=project_id,
             user_id=user_id,
             new_role=member_data.role,
-            current_user_id=current_user.id,
+            current_user_id=membership.user_id,
         )
-    except (PermissionError, LookupError, ValueError) as error:
-        raise_service_error(error)
+    # except (PermissionError, LookupError, ValueError) as error:
+    #     raise_service_error(error)
 
 
 @router.delete(
@@ -113,19 +124,21 @@ def update_project_member(
 def remove_project_member(
     project_id: int,
     user_id: int,
-    current_user: User = Depends(get_current_user),
+    membership: ProjectMember = Depends(
+        require_project_role(ProjectRole.OWNER)
+    ),
     service: ProjectMemberService = Depends(
         get_project_member_service
     ),
 ):
-    try:
+    # try:
         service.remove_member(
             project_id=project_id,
             user_id=user_id,
-            current_user_id=current_user.id,
+            current_user_id=membership.user_id,
         )
-    except (PermissionError, LookupError, ValueError) as error:
-        raise_service_error(error)
+    # except (PermissionError, LookupError, ValueError) as error:
+    #     raise_service_error(error)
 
 
 
