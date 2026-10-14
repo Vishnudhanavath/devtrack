@@ -1,40 +1,43 @@
-from pydantic import BaseModel, ConfigDict, Field 
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserCreate(BaseModel):
-    name: str 
-    email: str 
-    password: str = Field(
-        min_length=8,
-        max_length=128
-    )
+    model_config = ConfigDict(extra="forbid")
 
+    name: str = Field(min_length=1, max_length=100)
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128)
 
 
 class UserUpdate(BaseModel):
-    name: str | None = None
-    email: str | None = None
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=100)
+    email: EmailStr
 
 
 class UserPatch(BaseModel):
-    name: str | None = None
-    email: str | None = None
+    model_config = ConfigDict(extra="forbid")
 
-
+    name: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=100,
+    )
+    email: EmailStr | None = None
 
 
 class UserResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True) # return's as the object 
-    id:int 
-    name:str 
-    email: str 
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    email: str
 
 
-    
 class UserListResponse(BaseModel):
     item: list[UserResponse]
-    page:int
-    page_size:int 
-    total:int 
-    total_pages:int 
-    
+    page: int
+    page_size: int
+    total: int
+    total_pages: int

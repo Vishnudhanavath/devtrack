@@ -1,5 +1,6 @@
 from sqlalchemy import select, asc, desc, func
 from sqlalchemy.orm import Session
+from app.models.project_member import ProjectMember
 from app.models.user import User 
 
 
@@ -131,12 +132,18 @@ class UserRepository:
 
     def delete(self, user: User) -> None:
         try:
+            # Remove project memberships first so users who are members
+            # can still delete their accounts.
+            self.db.query(ProjectMember).filter(
+                ProjectMember.user_id == user.id
+            ).delete(synchronize_session=False)
+
             self.db.delete(user)
             self.db.commit()
 
         except Exception:
             self.db.rollback()
-            raise 
+            raise
 
 
 

@@ -6,6 +6,7 @@ from app.dependencies.auth import get_current_user
 from app.models.project_member import ProjectMember
 from app.models.user import User
 from app.repositories.project_member_repository import ProjectMemberRepository
+from app.repositories.project_repository import ProjectRepository
 
 
 from app.models.project_member import ProjectMember, ProjectRole
@@ -15,6 +16,16 @@ def get_project_member(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ProjectMember:
+    project_repository = ProjectRepository(db)
+
+    project = project_repository.get_by_id(project_id)
+
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
     repository = ProjectMemberRepository(db)
 
     membership = repository.get_membership(

@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 
 import pytest
 from fastapi.testclient import TestClient
@@ -8,6 +9,8 @@ from sqlalchemy.orm import sessionmaker
 from app.db.base import Base
 from app.db.database import get_db
 from app.main import app
+
+load_dotenv()
 
 # Require an explicit test database URL.
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
@@ -69,4 +72,11 @@ def client(db_session):
 
 
 
-        
+
+
+
+
+
+
+
+

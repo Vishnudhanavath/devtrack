@@ -1,12 +1,9 @@
 from pydantic import BaseModel, Field
 from typing import Literal
 
-class ProjectMemeberCreate(BaseModel):
+class ProjectMemberCreate(BaseModel):
     user_id: int
     role: Literal["manager","member"]="member"
-
-
-
 
 
 

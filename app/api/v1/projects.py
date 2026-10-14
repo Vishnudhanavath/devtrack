@@ -7,6 +7,7 @@ from fastapi import (
 
 from app.dependencies.auth import get_current_user
 from app.dependencies.project import get_project_service
+from app.dependencies.project_access import get_project_member
 from app.models.user import User
 from app.schemas.project import (
     ProjectCreate,
@@ -59,6 +60,7 @@ def get_project(
     project_id: int,
     current_user: User = Depends(get_current_user),
     service: ProjectService = Depends(get_project_service),
+    membership = Depends(get_project_member),
 ):
     project = service.get_project(project_id)
 

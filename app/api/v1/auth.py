@@ -16,13 +16,13 @@ router = APIRouter(
     response_model=TokenResponse,
 )
 def login(
-    # login_data: LoginRequest,
-    login_data: OAuth2PasswordRequestForm = Depends(),
+    login_data: LoginRequest,
+    # login_data: OAuth2PasswordRequestForm = Depends(),
     service: AuthService = Depends(get_auth_service),
 ):
     print("login_data:", login_data)
     user = service.authenticate_user(
-        email=login_data.username,
+        email=login_data.email,
         password=login_data.password,
     )
 

@@ -97,6 +97,12 @@ class ProjectRepository:
     def delete(self, project: Project) -> None:
 
         try:
+            # Remove project memberships first to avoid foreign key
+            # constraint violations when deleting the project.
+            self.db.query(ProjectMember).filter(
+                ProjectMember.project_id == project.id
+            ).delete(synchronize_session=False)
+
             self.db.delete(project)
             self.db.commit()
         except Exception:
