@@ -14,6 +14,7 @@ from app.core.exceptions.base import (
     ResourceConflictError,
     ResourceNotFoundError,
 )
+from sqlalchemy.orm import Session
 
 class ProjectMemberService:
 
@@ -22,10 +23,12 @@ class ProjectMemberService:
         member_repository: ProjectMemberRepository,
         project_repository: ProjectRepository,
         user_repository: UserRepository,
+        db: Session
     ):
         self.member_repository = member_repository
         self.project_repository = project_repository
         self.user_repository = user_repository
+        self.db = db 
 
 
     def _get_project_or_raise(
@@ -79,17 +82,20 @@ class ProjectMemberService:
         if existing is not None:
             raise ResourceConflictError("User is already a project member")
  
-        membership = ProjectMember( # call the repository to add the member
+        membership = ProjectMember(
             project_id=project_id,
             user_id=member_data.user_id,
             role=ProjectRole(member_data.role),
         )
 
-        # return self.member_repository.add(membership) 
         try:
-            return self.member_repository.add(membership)
+            membership = self.member_repository.add(membership)
+            self.db.commit()
+            self.db.refresh(membership)
+            return membership
 
         except IntegrityError as exc:
+            self.db.rollback()
             original_error = exc.orig
 
             sqlstate = getattr(original_error, "sqlstate", None)
@@ -110,13 +116,15 @@ class ProjectMemberService:
 
             raise
 
+        except Exception:
+            self.db.rollback()
+            raise
 
-
-    #get the members of the project 
+    # get the members of the project 
     def get_members(
             self,
-            project_id:int,
-            current_user_id:int, 
+            project_id: int,
+            current_user_id: int, 
     ) -> list[ProjectMember]:
         project = self._get_project_or_raise(project_id)
 
@@ -134,8 +142,7 @@ class ProjectMemberService:
 
         return self.member_repository.get_by_project(project_id)
 
-
-    #update role of the member 
+    # update role of the member 
     def update_member_role(
         self,
         project_id: int,
@@ -158,11 +165,16 @@ class ProjectMemberService:
 
         membership.role = ProjectRole(new_role)
 
-        return self.member_repository.update(membership)
+        try:
+            membership = self.member_repository.update(membership)
+            self.db.commit()
+            self.db.refresh(membership)
+            return membership
+        except Exception:
+            self.db.rollback()
+            raise
 
-
-    #delet the member 
-
+    # delete the member 
     def remove_member(
         self,
         project_id: int,
@@ -187,7 +199,13 @@ class ProjectMemberService:
         if membership is None:
             raise ResourceNotFoundError("Project membership not found")
 
-        self.member_repository.delete(membership)
+        try:
+            self.member_repository.delete(membership)
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+
 
 
         

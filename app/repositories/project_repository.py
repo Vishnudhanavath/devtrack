@@ -23,34 +23,56 @@ class ProjectRepository:
     #         raise 
 
 
+    # def create_with_owner(self, project: Project) -> Project:
+
+    #     try:
+    #         self.db.add(project)
+
+    #         # Send INSERT to the database without committing yet.
+    #         # This gives us project.id.
+    #         self.db.flush() #"Send my changes to PostgreSQL now, but don't permanently commit the transaction yet."
+
+    #         owner_membership = ProjectMember(
+    #             project_id=project.id,
+    #             user_id=project.owner_id,
+    #             role=ProjectRole.OWNER,
+    #         )
+
+    #         self.db.add(owner_membership)
+
+    #         # Commit both operations together.
+    #         self.db.commit()
+
+    #         # Refresh project so SQLAlchemy has the latest database state.
+    #         self.db.refresh(project)
+
+    #         return project
+
+    #     except Exception:
+    #         self.db.rollback()
+    #         raise
+
     def create_with_owner(self, project: Project) -> Project:
+        self.db.add(project)
 
-        try:
-            self.db.add(project)
+        # Send the project INSERT to the database without committing.
+        # This makes the generated project ID available.
+        self.db.flush()
 
-            # Send INSERT to the database without committing yet.
-            # This gives us project.id.
-            self.db.flush() #"Send my changes to PostgreSQL now, but don't permanently commit the transaction yet."
+        owner_membership = ProjectMember(
+            project_id=project.id,
+            user_id=project.owner_id,
+            role=ProjectRole.OWNER,
+        )
 
-            owner_membership = ProjectMember(
-                project_id=project.id,
-                user_id=project.owner_id,
-                role=ProjectRole.OWNER,
-            )
+        self.db.add(owner_membership)
 
-            self.db.add(owner_membership)
+        # Send the membership INSERT without committing.
+        self.db.flush()
 
-            # Commit both operations together.
-            self.db.commit()
+        return project
+        
 
-            # Refresh project so SQLAlchemy has the latest database state.
-            self.db.refresh(project)
-
-            return project
-
-        except Exception:
-            self.db.rollback()
-            raise
 
     # get the project by project id 
     def get_by_id(
@@ -83,31 +105,22 @@ class ProjectRepository:
         return self.db.scalars(statement).all() 
     
 
-    #updates the project 
+    # updates the project 
     def update(self, project: Project) -> Project:
+        self.db.flush()
+        return project
 
-        try:
-            self.db.commit()
-            self.db.refresh(project)
-            return project
-        except Exception:
-            self.db.rollback()
-            raise
     # deletes the project 
     def delete(self, project: Project) -> None:
+        # Remove project memberships first to avoid foreign key
+        # constraint violations when deleting the project.
+        self.db.query(ProjectMember).filter(
+            ProjectMember.project_id == project.id
+        ).delete(synchronize_session=False)
 
-        try:
-            # Remove project memberships first to avoid foreign key
-            # constraint violations when deleting the project.
-            self.db.query(ProjectMember).filter(
-                ProjectMember.project_id == project.id
-            ).delete(synchronize_session=False)
+        self.db.delete(project)
+        self.db.flush()
 
-            self.db.delete(project)
-            self.db.commit()
-        except Exception:
-            self.db.rollback()
-            raise
 
     
 

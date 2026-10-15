@@ -8,14 +8,14 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
+    slow_request_threshold_ms: float = 500.0
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",
     )
 
 
-settings = Settings() 
-
-
+settings = Settings()
 
 

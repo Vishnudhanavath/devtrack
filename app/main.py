@@ -12,9 +12,17 @@ from app.core.exceptions.handlers import (
     validation_exception_handler,
     unexpected_exception_handler,
 )
+from app.core.middleware import RequestIDMiddleware
+from app.core.logging_config import configure_logging
 
+
+
+configure_logging()
 
 app = FastAPI()
+app.add_middleware(RequestIDMiddleware)
+
+
 
 app.add_exception_handler(
     AppException,
@@ -43,3 +51,5 @@ app.include_router(users_router, prefix='/api/v1')
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(projects_router, prefix="/api/v1")
 app.include_router(project_members_router, prefix="/api/v1")
+
+

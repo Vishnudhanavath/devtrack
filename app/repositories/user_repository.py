@@ -11,16 +11,10 @@ class UserRepository:
         self.db = db
 
     def create(self, user: User) -> User:
-        try:
-            self.db.add(user)
-            self.db.commit()
-            self.db.refresh(user)
+        self.db.add(user)
+        self.db.flush()
+        return user
 
-            return user
-
-        except Exception:
-            self.db.rollback()
-            raise
 
     def get_all(
         self,
@@ -120,30 +114,19 @@ class UserRepository:
         return self.db.scalars(statement).first()
 
     def update(self, user: User) -> User:
-        try:
-            self.db.commit()
-            self.db.refresh(user)
-
-            return user
-
-        except Exception:
-            self.db.rollback()
-            raise
+        self.db.flush()
+        return user
 
     def delete(self, user: User) -> None:
-        try:
-            # Remove project memberships first so users who are members
-            # can still delete their accounts.
-            self.db.query(ProjectMember).filter(
-                ProjectMember.user_id == user.id
-            ).delete(synchronize_session=False)
+        # Remove project memberships first so users who are members
+        # can still delete their accounts.
+        self.db.query(ProjectMember).filter(
+            ProjectMember.user_id == user.id
+        ).delete(synchronize_session=False)
 
-            self.db.delete(user)
-            self.db.commit()
+        self.db.delete(user)
+        self.db.flush()
 
-        except Exception:
-            self.db.rollback()
-            raise
 
 
 

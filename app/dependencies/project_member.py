@@ -20,6 +20,8 @@ def get_project_member_service(
         member_repository=ProjectMemberRepository(db),
         project_repository=ProjectRepository(db),
         user_repository=UserRepository(db),
+        db=db,
     )
+
 
 
