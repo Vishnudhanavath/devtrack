@@ -23,4 +23,17 @@ class Settings(BaseSettings):
     )
 
 
+
+
+    redis_url: str = "redis://127.0.0.1:6379/0"
+
+    login_rate_limit_attempts: int = 5
+    login_rate_limit_requests: int = 5
+    login_rate_limit_window_seconds: int = 60
+
+
 settings = Settings()
+
+
+
+
